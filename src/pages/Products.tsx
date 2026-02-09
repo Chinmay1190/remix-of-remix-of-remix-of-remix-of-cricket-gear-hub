@@ -28,7 +28,7 @@ export default function Products() {
 
     // Category filter
     if (categoryParam) {
-      result = result.filter(p => p.category === categoryParam || categories.find(c => c.slug === categoryParam));
+      result = result.filter(p => p.category === categoryParam);
     }
 
     // Search filter
