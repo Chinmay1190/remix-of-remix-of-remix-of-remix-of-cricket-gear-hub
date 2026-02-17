@@ -52,14 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
     
-    if (!error) {
-      // Update profile with full name after signup
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('profiles').update({ full_name: fullName }).eq('user_id', user.id);
-      }
-    }
-    
     return { error: error as Error | null };
   };
 
