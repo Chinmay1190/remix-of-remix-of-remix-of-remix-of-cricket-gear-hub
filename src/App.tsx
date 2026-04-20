@@ -33,6 +33,8 @@ import TermsOfService from "./pages/TermsOfService";
 import Careers from "./pages/Careers";
 import Blog from "./pages/Blog";
 import Press from "./pages/Press";
+import Profile from "./pages/Profile";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -73,6 +75,8 @@ const App = () => (
                   <Route path="/careers" element={<Careers />} />
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/press" element={<Press />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/reports" element={<Reports />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <Footer />

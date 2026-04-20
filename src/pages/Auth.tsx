@@ -10,7 +10,12 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 const signUpSchema = z.object({
-  fullName: z.string().min(2, 'Name must be at least 2 characters').max(100),
+  fullName: z
+    .string()
+    .trim()
+    .min(2, 'Name must be at least 2 characters')
+    .max(60, 'Name must be at most 60 characters')
+    .regex(/^[A-Za-z][A-Za-z\s'-]*$/, 'Name can only contain letters, spaces, hyphens, and apostrophes'),
   email: z.string().email('Please enter a valid email').max(255),
   password: z.string().min(6, 'Password must be at least 6 characters').max(72),
 });
@@ -146,7 +151,7 @@ export default function Auth() {
                     type="text"
                     placeholder="Virat Kohli"
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    onChange={(e) => setFullName(e.target.value.replace(/[^A-Za-z\s'-]/g, ''))}
                     className="pl-10"
                   />
                 </div>
