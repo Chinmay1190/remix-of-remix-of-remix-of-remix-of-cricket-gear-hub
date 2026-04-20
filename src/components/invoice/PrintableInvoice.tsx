@@ -32,8 +32,11 @@ interface PrintableInvoiceProps {
   items: InvoiceItem[];
 }
 
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(price);
+const formatPrice = (price: number) => {
+  const rounded = Math.round(price);
+  const formatted = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(rounded);
+  return `Rs. ${formatted}`;
+};
 
 const formatDate = (dateString: string) =>
   new Date(dateString).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
