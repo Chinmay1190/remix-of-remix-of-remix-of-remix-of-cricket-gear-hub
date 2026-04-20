@@ -23,7 +23,6 @@ const navLinks = [
   { name: 'Home', path: '/' },
   { name: 'Shop', path: '/products' },
   { name: 'Bats', path: '/products?category=bats' },
-  { name: 'Gear', path: '/products' },
   { name: 'About', path: '/about' },
   { name: 'Contact', path: '/contact' },
 ];

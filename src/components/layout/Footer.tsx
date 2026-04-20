@@ -10,7 +10,7 @@ const footerLinks = {
   shop: [
     { name: 'Cricket Bats', path: '/products?category=bats' },
     { name: 'Batting Gloves', path: '/products?category=gloves' },
-    { name: 'Protective Gear', path: '/products?category=gear' },
+    { name: 'Helmets', path: '/products?category=helmets' },
     { name: 'Cricket Shoes', path: '/products?category=shoes' },
     { name: 'Clothing', path: '/products?category=clothing' },
     { name: 'Accessories', path: '/products?category=accessories' },
