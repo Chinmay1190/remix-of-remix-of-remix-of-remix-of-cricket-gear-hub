@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { PrintableInvoice } from '@/components/invoice/PrintableInvoice';
+import { downloadElementAsPdf } from '@/lib/pdf';
 
 interface OrderItem {
   id: string;
@@ -146,87 +147,34 @@ export default function OrderDetails() {
     toast.success('Invoice sent to printer!');
   };
 
-  const getInlineStyledHTML = (element: HTMLElement): string => {
-    const clone = element.cloneNode(true) as HTMLElement;
-    const original = element.querySelectorAll('*');
-    const cloned = clone.querySelectorAll('*');
-    
-    // Copy computed styles to inline styles for the root element
-    const rootStyles = window.getComputedStyle(element);
-    const rootImportantProps = ['font-family', 'color', 'background-color', 'padding', 'max-width', 'margin'];
-    rootImportantProps.forEach(prop => {
-      clone.style.setProperty(prop, rootStyles.getPropertyValue(prop));
-    });
-
-    // Copy computed styles for all child elements
-    original.forEach((el, i) => {
-      const computed = window.getComputedStyle(el);
-      const clonedEl = cloned[i] as HTMLElement;
-      const props = [
-        'font-family', 'font-size', 'font-weight', 'font-style',
-        'color', 'background-color', 'background',
-        'border', 'border-top', 'border-bottom', 'border-left', 'border-right',
-        'border-collapse',
-        'padding', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right',
-        'margin', 'margin-top', 'margin-bottom', 'margin-left', 'margin-right',
-        'text-align', 'vertical-align', 'line-height', 'letter-spacing',
-        'display', 'flex-direction', 'justify-content', 'align-items', 'gap',
-        'grid-template-columns',
-        'width', 'max-width', 'min-width', 'height',
-        'text-transform', 'text-decoration',
-      ];
-      props.forEach(prop => {
-        const val = computed.getPropertyValue(prop);
-        if (val) clonedEl.style.setProperty(prop, val);
-      });
-    });
-
-    return clone.outerHTML;
-  };
-
-  const downloadInvoice = () => {
+  const downloadInvoice = async () => {
     if (!order) return;
-
     const printContent = invoiceRef.current;
     if (!printContent) return;
 
-    // Temporarily make the invoice visible to compute styles
-    const hiddenContainer = printContent.closest('.hidden');
+    // Temporarily reveal the off-screen invoice so html2canvas can measure it
+    const hiddenContainer = printContent.closest('.hidden') as HTMLElement | null;
     if (hiddenContainer) {
-      (hiddenContainer as HTMLElement).style.position = 'absolute';
-      (hiddenContainer as HTMLElement).style.left = '-9999px';
-      (hiddenContainer as HTMLElement).classList.remove('hidden');
+      hiddenContainer.style.position = 'absolute';
+      hiddenContainer.style.left = '-9999px';
+      hiddenContainer.style.top = '0';
+      hiddenContainer.classList.remove('hidden');
     }
 
-    const styledHTML = getInlineStyledHTML(printContent);
-
-    if (hiddenContainer) {
-      (hiddenContainer as HTMLElement).style.position = '';
-      (hiddenContainer as HTMLElement).style.left = '';
-      (hiddenContainer as HTMLElement).classList.add('hidden');
+    try {
+      await downloadElementAsPdf(printContent, `Invoice-${order.order_number}.pdf`);
+      toast.success('Invoice downloaded!');
+    } catch (e) {
+      console.error(e);
+      toast.error('Failed to generate PDF');
+    } finally {
+      if (hiddenContainer) {
+        hiddenContainer.style.position = '';
+        hiddenContainer.style.left = '';
+        hiddenContainer.style.top = '';
+        hiddenContainer.classList.add('hidden');
+      }
     }
-
-    const blob = new Blob([`<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Invoice - ${order.order_number}</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; color: #000; background: #fff; display: flex; justify-content: center; }
-  </style>
-</head>
-<body>${styledHTML}</body>
-</html>`], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Invoice-${order.order_number}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success('Invoice downloaded!');
   };
 
   if (!user) {
