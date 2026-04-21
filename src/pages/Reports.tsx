@@ -19,7 +19,6 @@ import {
   Package,
   ShoppingBag,
   TrendingUp,
-  ShieldAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -28,7 +27,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/hooks/useAuth';
-import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -72,7 +70,6 @@ const formatINR = (n: number) =>
 
 export default function Reports() {
   const { user, isLoading: authLoading } = useAuth();
-  const { isAdmin, isLoading: adminLoading } = useAdmin();
   const navigate = useNavigate();
   const reportRef = useRef<HTMLDivElement>(null);
 
@@ -130,7 +127,7 @@ export default function Reports() {
 
   // Fetch data when window changes
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!user) return;
 
     const fetch = async () => {
       setIsLoadingData(true);
@@ -175,7 +172,7 @@ export default function Reports() {
     };
 
     fetch();
-  }, [isAdmin, startDate, endDate]);
+  }, [user, startDate, endDate]);
 
   // Aggregations
   const totals = useMemo(() => {
@@ -248,7 +245,7 @@ export default function Reports() {
     }
   };
 
-  if (authLoading || adminLoading) {
+  if (authLoading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -256,16 +253,15 @@ export default function Reports() {
     );
   }
 
-  if (!isAdmin) {
+  if (!user) {
     return (
       <main className="min-h-screen flex items-center justify-center px-4">
         <Card className="p-10 max-w-md text-center">
-          <ShieldAlert className="h-12 w-12 mx-auto text-destructive mb-4" />
-          <h1 className="text-2xl font-display mb-2">Admins Only</h1>
+          <h1 className="text-2xl font-display mb-2">Sign In Required</h1>
           <p className="text-muted-foreground mb-6">
-            You don't have permission to view Reports & Analytics.
+            Please sign in to view Reports & Analytics.
           </p>
-          <Button onClick={() => navigate('/')} variant="outline">Go Home</Button>
+          <Button onClick={() => navigate('/auth')} variant="outline">Sign In</Button>
         </Card>
       </main>
     );
