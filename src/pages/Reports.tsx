@@ -83,11 +83,11 @@ export default function Reports() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // Redirect non-admins
+  // Redirect unauthenticated users
   useEffect(() => {
-    if (authLoading || adminLoading) return;
+    if (authLoading) return;
     if (!user) navigate('/auth');
-  }, [authLoading, adminLoading, user, navigate]);
+  }, [authLoading, user, navigate]);
 
   // Compute date window from period + selections
   const { startDate, endDate, label } = useMemo(() => {
