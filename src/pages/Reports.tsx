@@ -19,7 +19,22 @@ import {
   Package,
   ShoppingBag,
   TrendingUp,
+  Sparkles,
+  BarChart3,
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  CartesianGrid,
+} from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -214,6 +229,20 @@ export default function Reports() {
       total: Number(o.total),
     }));
   }, [orders, items]);
+
+  // Time-series for chart (revenue per day in window)
+  const timeSeries = useMemo(() => {
+    const map = new Map<string, number>();
+    orders.forEach((o) => {
+      const day = format(new Date(o.created_at), 'dd MMM');
+      map.set(day, (map.get(day) ?? 0) + Number(o.total));
+    });
+    // Preserve chronological order
+    const entries = Array.from(map.entries()).reverse();
+    return entries.map(([date, revenue]) => ({ date, revenue }));
+  }, [orders]);
+
+  const PIE_COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444'];
 
   const handleDownload = async () => {
     if (!reportRef.current) return;
