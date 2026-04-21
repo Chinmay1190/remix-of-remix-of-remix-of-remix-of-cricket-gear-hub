@@ -14,7 +14,6 @@ import {
 import { useCart } from '@/hooks/useCart';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
-import { useAdmin } from '@/hooks/useAdmin';
 import { useWishlist } from '@/hooks/useWishlist';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -34,7 +33,6 @@ export function Header() {
   const { totalItems, setIsCartOpen } = useCart();
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
-  const { isAdmin } = useAdmin();
   const { wishlistItems } = useWishlist();
   const location = useLocation();
   const navigate = useNavigate();
@@ -180,14 +178,12 @@ export function Header() {
                         Wishlist
                       </Link>
                     </DropdownMenuItem>
-                    {isAdmin && (
-                      <DropdownMenuItem asChild>
-                        <Link to="/reports" className="flex items-center gap-2">
-                          <BarChart3 className="h-4 w-4" />
-                          Reports & Analytics
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem asChild>
+                      <Link to="/reports" className="flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4" />
+                        Reports & Analytics
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2 text-destructive">
                       <LogOut className="h-4 w-4" />
@@ -300,15 +296,13 @@ export function Header() {
                         <Package className="h-4 w-4" />
                         My Orders
                       </Link>
-                      {isAdmin && (
-                        <Link
-                          to="/reports"
-                          className="px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-muted-foreground hover:text-foreground hover:bg-muted"
-                        >
-                          <BarChart3 className="h-4 w-4" />
-                          Reports & Analytics
-                        </Link>
-                      )}
+                      <Link
+                        to="/reports"
+                        className="px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-muted-foreground hover:text-foreground hover:bg-muted"
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                        Reports & Analytics
+                      </Link>
                       <button
                         onClick={handleSignOut}
                         className="w-full px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 text-destructive hover:bg-muted"
