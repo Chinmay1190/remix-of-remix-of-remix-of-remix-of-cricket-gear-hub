@@ -82,7 +82,6 @@ export default function TrackOrder() {
   const isFinalStep = currentIdx === statusFlow.length - 1;
 
   const handleSimulate = () => {
-    if (!simulatedStatus) return;
     if (isFinalStep) {
       toast.info('Order already delivered!');
       return;
