@@ -33,7 +33,7 @@ const statusSteps = [
 export default function TrackOrder() {
   const [orderNumber, setOrderNumber] = useState('');
   const [order, setOrder] = useState<TrackedOrder | null>(null);
-  const [simulatedStatus, setSimulatedStatus] = useState<string | null>(null);
+  const [simulatedStatus, setSimulatedStatus] = useState<string>('confirmed');
   const [isSearching, setIsSearching] = useState(false);
   const { user } = useAuth();
 
