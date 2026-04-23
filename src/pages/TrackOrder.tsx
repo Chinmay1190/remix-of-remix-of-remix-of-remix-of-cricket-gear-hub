@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ArrowLeft, Search, Package, Clock, CheckCircle2, Truck, PlayCircle, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +33,7 @@ const statusSteps = [
 export default function TrackOrder() {
   const [orderNumber, setOrderNumber] = useState('');
   const [order, setOrder] = useState<TrackedOrder | null>(null);
-  const [simulatedStatus, setSimulatedStatus] = useState<string | null>(null);
+  const [simulatedStatus, setSimulatedStatus] = useState<string>('confirmed');
   const [isSearching, setIsSearching] = useState(false);
   const { user } = useAuth();
 
@@ -78,11 +78,10 @@ export default function TrackOrder() {
     }
   };
 
-  const currentIdx = simulatedStatus ? statusFlow.indexOf(simulatedStatus as typeof statusFlow[number]) : -1;
+  const currentIdx = statusFlow.indexOf(simulatedStatus as typeof statusFlow[number]);
   const isFinalStep = currentIdx === statusFlow.length - 1;
 
   const handleSimulate = () => {
-    if (!simulatedStatus) return;
     if (isFinalStep) {
       toast.info('Order already delivered!');
       return;
@@ -145,106 +144,116 @@ export default function TrackOrder() {
           )}
         </motion.div>
 
-        <AnimatePresence>
-          {order && simulatedStatus && (
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="bg-card rounded-2xl border border-border p-6 md:p-8 mt-6"
-            >
-              {/* Order summary */}
-              <div className="flex flex-wrap items-start justify-between gap-4 mb-6 pb-6 border-b border-border">
-                <div className="text-left">
-                  <p className="text-xs uppercase text-muted-foreground tracking-wider">Order</p>
-                  <p className="font-display text-xl">{order.order_number}</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {order.shipping_name} · {order.shipping_city}, {order.shipping_state}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <Badge variant="secondary" className="capitalize mb-2">
-                    {statusSteps.find((s) => s.key === simulatedStatus)?.label || simulatedStatus}
-                  </Badge>
-                  <p className="font-bold text-lg">{formatPrice(order.total)}</p>
-                </div>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card rounded-2xl border border-border p-6 md:p-8 mt-6"
+        >
+          {/* Order summary (only when a real order is found) */}
+          {order ? (
+            <div className="flex flex-wrap items-start justify-between gap-4 mb-6 pb-6 border-b border-border">
+              <div className="text-left">
+                <p className="text-xs uppercase text-muted-foreground tracking-wider">Order</p>
+                <p className="font-display text-xl">{order.order_number}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {order.shipping_name} · {order.shipping_city}, {order.shipping_state}
+                </p>
               </div>
-
-              {/* Vertical timeline */}
-              <div className="text-left space-y-0 mb-8">
-                {statusSteps.map((step, idx) => {
-                  const StepIcon = step.icon;
-                  const reached = idx <= currentIdx;
-                  const isCurrent = idx === currentIdx;
-                  const isLast = idx === statusSteps.length - 1;
-                  return (
-                    <div key={step.key} className="flex gap-4 relative">
-                      <div className="flex flex-col items-center">
-                        <motion.div
-                          animate={{ scale: isCurrent ? [1, 1.15, 1] : 1 }}
-                          transition={{ duration: 0.6, repeat: isCurrent ? Infinity : 0, repeatDelay: 1.2 }}
-                          className={cn(
-                            'w-11 h-11 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors',
-                            reached
-                              ? 'bg-primary text-primary-foreground border-primary'
-                              : 'bg-muted text-muted-foreground border-border'
-                          )}
-                        >
-                          <StepIcon className="h-5 w-5" />
-                        </motion.div>
-                        {!isLast && (
-                          <div
-                            className={cn(
-                              'w-0.5 flex-1 min-h-[40px] my-1 transition-colors',
-                              idx < currentIdx ? 'bg-primary' : 'bg-border'
-                            )}
-                          />
-                        )}
-                      </div>
-                      <div className="pb-6 pt-1">
-                        <p className={cn('font-semibold', reached ? 'text-foreground' : 'text-muted-foreground')}>
-                          {step.label}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{step.desc}</p>
-                        {isCurrent && (
-                          <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="text-xs text-primary mt-1 font-medium"
-                          >
-                            ● Current status
-                          </motion.p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="text-right">
+                <Badge variant="secondary" className="capitalize mb-2">
+                  {statusSteps.find((s) => s.key === simulatedStatus)?.label || simulatedStatus}
+                </Badge>
+                <p className="font-bold text-lg">{formatPrice(order.total)}</p>
               </div>
-
-              {/* Simulate controls */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  onClick={handleSimulate}
-                  disabled={isFinalStep}
-                  size="lg"
-                  className="flex-1 gap-2"
-                >
-                  <PlayCircle className="h-5 w-5" />
-                  {isFinalStep
-                    ? 'Delivered ✓'
-                    : `Simulate: Move to ${statusSteps[currentIdx + 1]?.label}`}
-                </Button>
-                <Button onClick={handleReset} variant="outline" size="lg" className="gap-2">
-                  <RotateCcw className="h-4 w-4" />
-                  Reset
-                </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-4 mb-6 pb-6 border-b border-border">
+              <div className="text-left">
+                <p className="text-xs uppercase text-muted-foreground tracking-wider">Demo Mode</p>
+                <p className="font-display text-xl">Simulation Preview</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Try the delivery flow below, or search an order above.
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-4 text-center">
-                This is a demo simulation — clicking advances the order through Confirmed → Processing → Shipped → Delivered.
-              </p>
-            </motion.div>
+              <Badge variant="secondary" className="capitalize">
+                {statusSteps.find((s) => s.key === simulatedStatus)?.label}
+              </Badge>
+            </div>
           )}
-        </AnimatePresence>
+
+          {/* Vertical timeline */}
+          <div className="text-left space-y-0 mb-8">
+            {statusSteps.map((step, idx) => {
+              const StepIcon = step.icon;
+              const reached = idx <= currentIdx;
+              const isCurrent = idx === currentIdx;
+              const isLast = idx === statusSteps.length - 1;
+              return (
+                <div key={step.key} className="flex gap-4 relative">
+                  <div className="flex flex-col items-center">
+                    <motion.div
+                      animate={{ scale: isCurrent ? [1, 1.15, 1] : 1 }}
+                      transition={{ duration: 0.6, repeat: isCurrent ? Infinity : 0, repeatDelay: 1.2 }}
+                      className={cn(
+                        'w-11 h-11 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors',
+                        reached
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-muted text-muted-foreground border-border'
+                      )}
+                    >
+                      <StepIcon className="h-5 w-5" />
+                    </motion.div>
+                    {!isLast && (
+                      <div
+                        className={cn(
+                          'w-0.5 flex-1 min-h-[40px] my-1 transition-colors',
+                          idx < currentIdx ? 'bg-primary' : 'bg-border'
+                        )}
+                      />
+                    )}
+                  </div>
+                  <div className="pb-6 pt-1">
+                    <p className={cn('font-semibold', reached ? 'text-foreground' : 'text-muted-foreground')}>
+                      {step.label}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{step.desc}</p>
+                    {isCurrent && (
+                      <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-xs text-primary mt-1 font-medium"
+                      >
+                        ● Current status
+                      </motion.p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Simulate controls */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              onClick={handleSimulate}
+              disabled={isFinalStep}
+              size="lg"
+              className="flex-1 gap-2"
+            >
+              <PlayCircle className="h-5 w-5" />
+              {isFinalStep
+                ? 'Delivered ✓'
+                : `Simulate: Move to ${statusSteps[currentIdx + 1]?.label}`}
+            </Button>
+            <Button onClick={handleReset} variant="outline" size="lg" className="gap-2">
+              <RotateCcw className="h-4 w-4" />
+              Reset
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-4 text-center">
+            Demo simulation — advances the order through Confirmed → Processing → Shipped → Delivered.
+          </p>
+        </motion.div>
       </div>
     </main>
   );
