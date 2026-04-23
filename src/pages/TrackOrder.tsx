@@ -78,7 +78,7 @@ export default function TrackOrder() {
     }
   };
 
-  const currentIdx = simulatedStatus ? statusFlow.indexOf(simulatedStatus as typeof statusFlow[number]) : -1;
+  const currentIdx = statusFlow.indexOf(simulatedStatus as typeof statusFlow[number]);
   const isFinalStep = currentIdx === statusFlow.length - 1;
 
   const handleSimulate = () => {
