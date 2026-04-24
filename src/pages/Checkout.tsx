@@ -27,12 +27,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { INDIAN_STATES, INDIAN_STATES_CITIES } from '@/data/indianLocations';
 
 const steps = [
   { label: 'Information', icon: User },
@@ -40,18 +48,45 @@ const steps = [
   { label: 'Payment', icon: CreditCard },
 ];
 
+// Strict validation rules
+const nameRegex = /^[A-Za-z][A-Za-z\s'-]{1,49}$/;
+const phoneRegex = /^[6-9]\d{9}$/; // Indian mobile: 10 digits, starts with 6-9
+const pincodeRegex = /^[1-9]\d{5}$/; // Indian PIN: 6 digits, no leading 0
+const addressRegex = /^[A-Za-z0-9\s,.\-/#()]+$/;
+
 const informationSchema = z.object({
-  firstName: z.string().min(2, 'First name is required').max(50),
-  lastName: z.string().min(2, 'Last name is required').max(50),
-  email: z.string().email('Valid email is required'),
-  phone: z.string().min(10, 'Valid phone number is required').max(15),
+  firstName: z
+    .string()
+    .trim()
+    .min(2, 'First name must be at least 2 characters')
+    .max(50, 'First name is too long')
+    .regex(nameRegex, 'Only letters, spaces, hyphens and apostrophes allowed'),
+  lastName: z
+    .string()
+    .trim()
+    .min(2, 'Last name must be at least 2 characters')
+    .max(50, 'Last name is too long')
+    .regex(nameRegex, 'Only letters, spaces, hyphens and apostrophes allowed'),
+  email: z.string().trim().email('Enter a valid email address').max(255),
+  phone: z
+    .string()
+    .trim()
+    .regex(phoneRegex, 'Enter a valid 10-digit mobile number (starts with 6-9)'),
 });
 
 const shippingSchema = z.object({
-  address: z.string().min(5, 'Address is required').max(200),
-  city: z.string().min(2, 'City is required').max(50),
-  state: z.string().min(2, 'State is required').max(50),
-  pincode: z.string().min(6, 'Valid PIN code is required').max(6),
+  address: z
+    .string()
+    .trim()
+    .min(10, 'Address must be at least 10 characters')
+    .max(200, 'Address is too long')
+    .regex(addressRegex, 'Address contains invalid characters'),
+  state: z.string().trim().min(1, 'Please select a state'),
+  city: z.string().trim().min(1, 'Please select a city'),
+  pincode: z
+    .string()
+    .trim()
+    .regex(pincodeRegex, 'Enter a valid 6-digit PIN code'),
 });
 
 // Reusable input with leading icon
@@ -127,8 +162,30 @@ export default function Checkout() {
   const freeShippingProgress = Math.min(100, (totalPrice / FREE_SHIPPING_THRESHOLD) * 100);
 
   const updateFormData = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    let next = value;
+    // Field-level input filtering
+    if (field === 'firstName' || field === 'lastName') {
+      next = value.replace(/[^A-Za-z\s'-]/g, '').slice(0, 50);
+    } else if (field === 'phone') {
+      next = value.replace(/\D/g, '').slice(0, 10);
+    } else if (field === 'pincode') {
+      next = value.replace(/\D/g, '').slice(0, 6);
+    } else if (field === 'address') {
+      next = value.slice(0, 200);
+    }
+
+    setFormData((prev) => {
+      // Reset city when state changes
+      if (field === 'state' && prev.state !== next) {
+        return { ...prev, state: next, city: '' };
+      }
+      return { ...prev, [field]: next };
+    });
+
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
+    if (field === 'state' && errors.city) {
+      setErrors((prev) => ({ ...prev, city: '' }));
+    }
   };
 
   const validateStep = (step: number): boolean => {
@@ -422,12 +479,18 @@ export default function Checkout() {
                       label="Phone Number"
                       icon={Phone}
                       type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      autoComplete="tel"
                       required
                       placeholder="9876543210"
                       value={formData.phone}
                       onChange={(e) => updateFormData('phone', e.target.value)}
                       error={errors.phone}
                     />
+                    <p className="text-xs text-muted-foreground -mt-3">
+                      10-digit Indian mobile number, starting with 6, 7, 8 or 9.
+                    </p>
 
                     <Button
                       className="w-full h-12 text-base bg-gradient-to-r from-primary to-accent hover:opacity-95"
@@ -466,26 +529,76 @@ export default function Checkout() {
                     />
 
                     <div className="grid md:grid-cols-2 gap-4">
-                      <IconInput
-                        id="city"
-                        label="City"
-                        icon={MapPin}
-                        required
-                        placeholder="Mumbai"
-                        value={formData.city}
-                        onChange={(e) => updateFormData('city', e.target.value)}
-                        error={errors.city}
-                      />
-                      <IconInput
-                        id="state"
-                        label="State"
-                        icon={MapPin}
-                        required
-                        placeholder="Maharashtra"
-                        value={formData.state}
-                        onChange={(e) => updateFormData('state', e.target.value)}
-                        error={errors.state}
-                      />
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="state"
+                          className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                        >
+                          State <span className="text-destructive">*</span>
+                        </Label>
+                        <Select
+                          value={formData.state}
+                          onValueChange={(v) => updateFormData('state', v)}
+                        >
+                          <SelectTrigger
+                            id="state"
+                            className={cn(
+                              'h-11 bg-background/60 border-border/70',
+                              errors.state && 'border-destructive'
+                            )}
+                          >
+                            <SelectValue placeholder="Select your state" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-72">
+                            {INDIAN_STATES.map((s) => (
+                              <SelectItem key={s} value={s}>
+                                {s}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.state && (
+                          <p className="text-xs text-destructive font-medium">{errors.state}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="city"
+                          className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                        >
+                          City <span className="text-destructive">*</span>
+                        </Label>
+                        <Select
+                          value={formData.city}
+                          onValueChange={(v) => updateFormData('city', v)}
+                          disabled={!formData.state}
+                        >
+                          <SelectTrigger
+                            id="city"
+                            className={cn(
+                              'h-11 bg-background/60 border-border/70',
+                              errors.city && 'border-destructive'
+                            )}
+                          >
+                            <SelectValue
+                              placeholder={
+                                formData.state ? 'Select your city' : 'Select state first'
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-72">
+                            {(INDIAN_STATES_CITIES[formData.state] || []).map((c) => (
+                              <SelectItem key={c} value={c}>
+                                {c}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.city && (
+                          <p className="text-xs text-destructive font-medium">{errors.city}</p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
@@ -494,6 +607,9 @@ export default function Checkout() {
                         label="PIN Code"
                         icon={MapPin}
                         required
+                        inputMode="numeric"
+                        maxLength={6}
+                        autoComplete="postal-code"
                         placeholder="400001"
                         value={formData.pincode}
                         onChange={(e) => updateFormData('pincode', e.target.value)}
