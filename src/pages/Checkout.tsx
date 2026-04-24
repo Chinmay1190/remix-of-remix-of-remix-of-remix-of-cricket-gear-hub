@@ -48,18 +48,45 @@ const steps = [
   { label: 'Payment', icon: CreditCard },
 ];
 
+// Strict validation rules
+const nameRegex = /^[A-Za-z][A-Za-z\s'-]{1,49}$/;
+const phoneRegex = /^[6-9]\d{9}$/; // Indian mobile: 10 digits, starts with 6-9
+const pincodeRegex = /^[1-9]\d{5}$/; // Indian PIN: 6 digits, no leading 0
+const addressRegex = /^[A-Za-z0-9\s,.\-/#()]+$/;
+
 const informationSchema = z.object({
-  firstName: z.string().min(2, 'First name is required').max(50),
-  lastName: z.string().min(2, 'Last name is required').max(50),
-  email: z.string().email('Valid email is required'),
-  phone: z.string().min(10, 'Valid phone number is required').max(15),
+  firstName: z
+    .string()
+    .trim()
+    .min(2, 'First name must be at least 2 characters')
+    .max(50, 'First name is too long')
+    .regex(nameRegex, 'Only letters, spaces, hyphens and apostrophes allowed'),
+  lastName: z
+    .string()
+    .trim()
+    .min(2, 'Last name must be at least 2 characters')
+    .max(50, 'Last name is too long')
+    .regex(nameRegex, 'Only letters, spaces, hyphens and apostrophes allowed'),
+  email: z.string().trim().email('Enter a valid email address').max(255),
+  phone: z
+    .string()
+    .trim()
+    .regex(phoneRegex, 'Enter a valid 10-digit mobile number (starts with 6-9)'),
 });
 
 const shippingSchema = z.object({
-  address: z.string().min(5, 'Address is required').max(200),
-  city: z.string().min(2, 'City is required').max(50),
-  state: z.string().min(2, 'State is required').max(50),
-  pincode: z.string().min(6, 'Valid PIN code is required').max(6),
+  address: z
+    .string()
+    .trim()
+    .min(10, 'Address must be at least 10 characters')
+    .max(200, 'Address is too long')
+    .regex(addressRegex, 'Address contains invalid characters'),
+  state: z.string().trim().min(1, 'Please select a state'),
+  city: z.string().trim().min(1, 'Please select a city'),
+  pincode: z
+    .string()
+    .trim()
+    .regex(pincodeRegex, 'Enter a valid 6-digit PIN code'),
 });
 
 // Reusable input with leading icon
