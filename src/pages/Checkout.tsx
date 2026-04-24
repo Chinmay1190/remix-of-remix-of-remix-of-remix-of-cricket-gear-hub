@@ -529,26 +529,76 @@ export default function Checkout() {
                     />
 
                     <div className="grid md:grid-cols-2 gap-4">
-                      <IconInput
-                        id="city"
-                        label="City"
-                        icon={MapPin}
-                        required
-                        placeholder="Mumbai"
-                        value={formData.city}
-                        onChange={(e) => updateFormData('city', e.target.value)}
-                        error={errors.city}
-                      />
-                      <IconInput
-                        id="state"
-                        label="State"
-                        icon={MapPin}
-                        required
-                        placeholder="Maharashtra"
-                        value={formData.state}
-                        onChange={(e) => updateFormData('state', e.target.value)}
-                        error={errors.state}
-                      />
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="state"
+                          className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                        >
+                          State <span className="text-destructive">*</span>
+                        </Label>
+                        <Select
+                          value={formData.state}
+                          onValueChange={(v) => updateFormData('state', v)}
+                        >
+                          <SelectTrigger
+                            id="state"
+                            className={cn(
+                              'h-11 bg-background/60 border-border/70',
+                              errors.state && 'border-destructive'
+                            )}
+                          >
+                            <SelectValue placeholder="Select your state" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-72">
+                            {INDIAN_STATES.map((s) => (
+                              <SelectItem key={s} value={s}>
+                                {s}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.state && (
+                          <p className="text-xs text-destructive font-medium">{errors.state}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="city"
+                          className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                        >
+                          City <span className="text-destructive">*</span>
+                        </Label>
+                        <Select
+                          value={formData.city}
+                          onValueChange={(v) => updateFormData('city', v)}
+                          disabled={!formData.state}
+                        >
+                          <SelectTrigger
+                            id="city"
+                            className={cn(
+                              'h-11 bg-background/60 border-border/70',
+                              errors.city && 'border-destructive'
+                            )}
+                          >
+                            <SelectValue
+                              placeholder={
+                                formData.state ? 'Select your city' : 'Select state first'
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-72">
+                            {(INDIAN_STATES_CITIES[formData.state] || []).map((c) => (
+                              <SelectItem key={c} value={c}>
+                                {c}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.city && (
+                          <p className="text-xs text-destructive font-medium">{errors.city}</p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-4">
@@ -557,6 +607,9 @@ export default function Checkout() {
                         label="PIN Code"
                         icon={MapPin}
                         required
+                        inputMode="numeric"
+                        maxLength={6}
+                        autoComplete="postal-code"
                         placeholder="400001"
                         value={formData.pincode}
                         onChange={(e) => updateFormData('pincode', e.target.value)}
