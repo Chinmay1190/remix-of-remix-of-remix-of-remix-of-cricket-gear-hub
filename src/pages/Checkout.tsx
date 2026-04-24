@@ -162,8 +162,30 @@ export default function Checkout() {
   const freeShippingProgress = Math.min(100, (totalPrice / FREE_SHIPPING_THRESHOLD) * 100);
 
   const updateFormData = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    let next = value;
+    // Field-level input filtering
+    if (field === 'firstName' || field === 'lastName') {
+      next = value.replace(/[^A-Za-z\s'-]/g, '').slice(0, 50);
+    } else if (field === 'phone') {
+      next = value.replace(/\D/g, '').slice(0, 10);
+    } else if (field === 'pincode') {
+      next = value.replace(/\D/g, '').slice(0, 6);
+    } else if (field === 'address') {
+      next = value.slice(0, 200);
+    }
+
+    setFormData((prev) => {
+      // Reset city when state changes
+      if (field === 'state' && prev.state !== next) {
+        return { ...prev, state: next, city: '' };
+      }
+      return { ...prev, [field]: next };
+    });
+
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
+    if (field === 'state' && errors.city) {
+      setErrors((prev) => ({ ...prev, city: '' }));
+    }
   };
 
   const validateStep = (step: number): boolean => {
