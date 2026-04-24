@@ -479,12 +479,18 @@ export default function Checkout() {
                       label="Phone Number"
                       icon={Phone}
                       type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      autoComplete="tel"
                       required
                       placeholder="9876543210"
                       value={formData.phone}
                       onChange={(e) => updateFormData('phone', e.target.value)}
                       error={errors.phone}
                     />
+                    <p className="text-xs text-muted-foreground -mt-3">
+                      10-digit Indian mobile number, starting with 6, 7, 8 or 9.
+                    </p>
 
                     <Button
                       className="w-full h-12 text-base bg-gradient-to-r from-primary to-accent hover:opacity-95"
